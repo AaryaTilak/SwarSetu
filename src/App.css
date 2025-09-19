@@ -1,42 +1,47 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/* --- Component Styles --- */
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
+/* Card Styling */
 .card {
-  padding: 2em;
+  background-color: #423A3A !important;
+  color: #F5F5DC !important;
+  border-color: #5a5050 !important;
 }
 
-.read-the-docs {
-  color: #888;
+/* Primary Button Styling */
+.btn-primary {
+  background-color: #D97925 !important;
+  border-color: #D97925 !important;
+  color: #FFFFFF !important;
+}
+
+.btn-primary:hover {
+  background-color: #A53F3F !important;
+  border-color: #A53F3F !important;
+}
+
+/* General Link Styling */
+a {
+  color: #D97925;
+}
+
+a:hover {
+  color: #A53F3F;
+}
+
+/* Active Nav Link Styling */
+.nav-link.active {
+    color: #D97925 !important;
+    font-weight: bold;
+}
+
+/* Modal Styling */
+.modal-content {
+    background-color: #212121 !important;
+    border-color: #423A3A !important;
+}
+.modal-header {
+    border-bottom-color: #423A3A !important;
+}
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
 }

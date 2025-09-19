@@ -1,8 +1,12 @@
 body {
-  background-color: #121212; /* Dark background for the page */
-  color: white;
-  padding-top: 70px; /* Offset for the fixed header */
-  padding-bottom: 120px; /* Offset for the fixed player */
+  /* Main page background */
+  background-color: #212121;
+  
+  /* Main text color */
+  color: #F5F5DC; 
+  
+  padding-top: 70px;
+  padding-bottom: 120px;
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -11,14 +15,62 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #212529; /* Dark track */
+  background: #212121; /* Dark track to match background */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #555; /* Gray thumb */
+  background: #423A3A; /* Darker, earthy thumb */
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #888; /* Lighter thumb on hover */
+  background: #D97925; /* Saffron highlight on hover */
+}
+
+/* --- Component Styles --- */
+
+/* Card Styling */
+.card {
+  background-color: #423A3A !important;
+  color: #F5F5DC !important;
+  border-color: #5a5050 !important;
+}
+
+/* Primary Button Styling */
+.btn-primary {
+  background-color: #D97925 !important;
+  border-color: #D97925 !important;
+  color: #FFFFFF !important;
+}
+
+.btn-primary:hover {
+  background-color: #A53F3F !important;
+  border-color: #A53F3F !important;
+}
+
+/* General Link Styling */
+a {
+  color: #D97925;
+}
+
+a:hover {
+  color: #A53F3F;
+}
+
+/* Active Nav Link Styling */
+.nav-link.active {
+    color: #D97925 !important;
+    font-weight: bold;
+}
+
+/* Modal Styling */
+.modal-content {
+    background-color: #212121 !important;
+    border-color: #423A3A !important;
+}
+.modal-header {
+    border-bottom-color: #423A3A !important;
+}
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
 }
