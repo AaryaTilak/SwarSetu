@@ -3,9 +3,9 @@ import MusicCard from './MusicCard'; // We can reuse the MusicCard component
 
 // Sample data for the user's library
 const userPlaylists = [
-  { id: 1, title: 'Road Trip Mix', artist: '45 songs', image: 'https://picsum.photos/seed/playlist1/200' },
-  { id: 2, title: 'Workout Beats', artist: '30 songs', image: 'https://picsum.photos/seed/playlist2/200' },
-  { id: 3, title: 'Late Night Lo-fi', artist: '88 songs', image: 'https://picsum.photos/seed/playlist3/200' },
+  { id: 1, title: 'Thumri Mix', artist: '45 songs', image: 'https://picsum.photos/seed/playlist1/200' },
+  { id: 2, title: 'Semi-classical Beats', artist: '30 songs', image: 'https://picsum.photos/seed/playlist2/200' },
+  { id: 3, title: 'Late Night Ghazals', artist: '88 songs', image: 'https://picsum.photos/seed/playlist3/200' },
   { id: 4, title: 'Classical Focus', artist: '50 songs', image: 'https://picsum.photos/seed/playlist4/200' },
 ];
 

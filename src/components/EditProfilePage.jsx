@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 
 // Mock data for the current user's profile
 const currentUser = {
-  fullName: 'Alex Ray',
-  email: 'alex.ray@example.com',
-  phone: '+91 98765 43210',
+  fullName: 'Aarya Tilak',
+  email: 'aaryatilak@gmail.com',
+  phone: '+91 9022245673',
   bio: 'Music lover. Creator of playlists. Always looking for the next great track.',
   profilePic: 'https://i.pravatar.cc/150?u=alexray',
 };

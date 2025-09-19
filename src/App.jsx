@@ -15,41 +15,41 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 // --- Placeholder Data ---
 const newReleases = [
   {
-    id: 1, title: 'Starfall', artist: 'Luna Beat', image: 'https://picsum.photos/seed/1/200',
+    id: 1, title: 'Ghazal', artist: 'Jagjit Singh', image: 'https://picsum.photos/seed/1/200',
     songs: [
-      { id: 101, title: 'Galaxy Rise', artist: 'Luna Beat' },
-      { id: 102, title: 'Nebula Dream', artist: 'Luna Beat' },
-      { id: 103, title: 'Comet Tail', artist: 'Luna Beat' },
+      { id: 101, title: 'Jhuki Jhuki si nazar', artist: 'Jagjit Singh' },
+      { id: 102, title: 'Wo kagaz ki kashti', artist: 'Jagjit Singh' },
+      { id: 103, title: 'Hazaron Khwahishen Aisi', artist: 'Jagjit Singh' },
     ]
   },
   {
-    id: 2, title: 'Ocean Drive', artist: 'Synth Wave', image: 'https://picsum.photos/seed/2/200',
+    id: 2, title: 'Morning Raagas', artist: 'Dr. Prabha Atre', image: 'https://picsum.photos/seed/2/200',
     songs: [
-      { id: 201, title: 'Sunset Cruise', artist: 'Synth Wave' },
-      { id: 202, title: 'Night Ride', artist: 'Synth Wave' },
-      { id: 203, title: 'City Lights', artist: 'Synth Wave' },
+      { id: 201, title: 'Bhairav', artist: 'Dr. Prabha Atre' },
+      { id: 202, title: 'Lalit', artist: 'Dr. Prabha Atre' },
+      { id: 203, title: 'Todi', artist: 'Dr. Prabha Atre' },
     ]
   },
-  { id: 3, title: 'City Lights', artist: 'Metro Vibes', image: 'https://picsum.photos/seed/3/200',
+  { id: 3, title: 'Semi-classical music', artist: 'Shreya Ghoshal', image: 'https://picsum.photos/seed/3/200',
     songs: [
-      { id: 301, title: 'Downtown', artist: 'Metro Vibes' },
-      { id: 302, title: 'Uptown Groove', artist: 'Metro Vibes' },
-      { id: 303, title: 'Subway Beats', artist: 'Metro Vibes' },
+      { id: 301, title: 'Mere dholna', artist: 'Shreya Ghoshal' },
+      { id: 302, title: 'Tere bin', artist: 'Shreya Ghoshal' },
+      { id: 303, title: 'Bairi Piya', artist: 'Shreya Ghoshal' },
     ]
    },
-  { id: 4, title: 'Desert Mirage', artist: 'Echoes', image: 'https://picsum.photos/seed/4/200',
+  { id: 4, title: 'Thumri', artist: 'Ustad Rashid Khan', image: 'https://picsum.photos/seed/4/200',
     songs: [
-      { id: 401, title: 'Sandy Winds', artist: 'Echoes' },
-      { id: 402, title: 'Oasis', artist: 'Echoes' },
-      { id: 403, title: 'Dune Dance', artist: 'Echoes' },
+      { id: 401, title: '"Aaj Radha Brij Ko Chali"', artist: 'Ustad Rashid Khan' },
+      { id: 402, title: 'Babul Mora', artist: 'Ustad Rashid Khan' },
+      { id: 403, title: 'Shyam Sundar Banwari', artist: 'Ustad Rashid Khan' },
     ]
    },
 ];
 
 const popularArtists = [
- { id: 7, title: 'Aura', artist: 'Electronic', image: 'https://picsum.photos/seed/7/200', songs: [{id: 701, title: 'Pulse', artist: 'Aura'}] },
- { id: 8, title: 'Rift', artist: 'Rock', image: 'https://picsum.photos/seed/8/200', songs: [{id: 801, title: 'Fissure', artist: 'Rift'}] },
- { id: 9, title: 'Helios', artist: 'Ambient', image: 'https://picsum.photos/seed/9/200', songs: [{id: 901, title: 'Sunbeam', artist: 'Helios'}] },
+ { id: 7, title: 'Morning Raagas', artist: 'Pta. Kishori Amonkar', image: 'https://picsum.photos/seed/7/200', songs: [{id: 701, title: 'Raag Bhoop', artist: 'Pta. Kishori Amonkar'}] },
+ { id: 8, title: 'Afternoon Raagas', artist: 'Malini Rajurkar', image: 'https://picsum.photos/seed/8/200', songs: [{id: 801, title: 'Raag Sarang', artist: 'Malini Rajurkar'}] },
+ { id: 9, title: 'Evening Raagas', artist: 'Parveen Sultana', image: 'https://picsum.photos/seed/9/200', songs: [{id: 901, title: 'Raag Yaman', artist: 'Parveen Sultana'}] },
 ];
 
 const initialUploads = [

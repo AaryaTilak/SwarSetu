@@ -4,7 +4,7 @@ import React from 'react';
 const categories = {
   moods: ['Happy', 'Sad', 'Energetic', 'Calm', 'Romantic', 'Focus'],
   timesOfDay: ['Morning', 'Afternoon', 'Evening', 'Night'],
-  artists: ['A. R. Rahman', 'Lata Mangeshkar', 'Shreya Ghoshal', 'Arijit Singh', 'Sonu Nigam', 'Anirudh'],
+  artists: ['Pt. Ajay Pohankar', 'Lata Mangeshkar', 'Kalapini Komkali', 'Pt. Jasraj', 'Dr. Prabha Atre', 'Anirudh Aithal'],
   instruments: ['Sitar', 'Tabla', 'Sarod', 'Flute', 'Violin', 'Piano'],
 };
 
