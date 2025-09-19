@@ -1,0 +1,24 @@
+body {
+  background-color: #121212; /* Dark background for the page */
+  color: white;
+  padding-top: 70px; /* Offset for the fixed header */
+  padding-bottom: 120px; /* Offset for the fixed player */
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #212529; /* Dark track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555; /* Gray thumb */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #888; /* Lighter thumb on hover */
+}
