@@ -21,7 +21,7 @@ const db = mysql.createPool({
   host: 'localhost',
   user: 'root',             // Your MySQL username
   password: 'your_password',    // <-- IMPORTANT: Change this to your MySQL password
-  database: 'music_app'
+  database: 'music_app'    // Your MySQL database name
 }).promise();
 
 // 5. Multer Configuration (Handles File Uploads)
