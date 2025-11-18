@@ -20,9 +20,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const db = mysql.createPool({
   host: 'localhost',
   user: 'root',             // Your MySQL username
-  password: 'your_password',    // <-- IMPORTANT: Change this to your MySQL password
-  database: 'music_app'    // Your MySQL database name
+  password: '2212@AaryaTilak@1008@MysqlNew',    // <-- IMPORTANT: Change this to your MySQL password
+  database: 'SwarSetu1'    // Your MySQL database name
 }).promise();
+
 
 // 5. Multer Configuration (Handles File Uploads)
 const storage = multer.diskStorage({
@@ -73,6 +74,28 @@ app.get('/songs', async (req, res) => {
   } catch (err) {
     console.error("Database fetch error:", err);
     res.status(500).json({ error: "Failed to fetch songs." });
+  }
+});
+
+// C. Endpoint to DELETE a song
+// We use a dynamic route parameter ':id' to specify which song to delete
+app.delete('/songs/:id', async (req, res) => {
+  const { id } = req.params; // Get the ID from the URL
+
+  try {
+    // Note: We'll also need to delete the actual file from the /uploads folder
+    // For simplicity, we'll just delete the database record for now.
+    
+    const [result] = await db.query('DELETE FROM songs WHERE id = ?', [id]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    res.json({ message: 'Song deleted successfully.' });
+  } catch (err) {
+    console.error("Database delete error:", err);
+    res.status(500).json({ error: "Failed to delete song." });
   }
 });
 

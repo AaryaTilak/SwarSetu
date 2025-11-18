@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Make sure useEffect is imported
 import Header from './components/Header';
 import MusicCarousel from './components/MusicCarousel';
 import Player from './components/Player';
@@ -12,7 +12,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-// --- Placeholder Data ---
+// --- Mock Data for Playlists (Can be replaced by API later) ---
 const newReleases = [
   {
     id: 1, title: 'Ghazal', artist: 'Jagjit Singh', image: 'https://picsum.photos/seed/1/200',
@@ -52,19 +52,39 @@ const popularArtists = [
  { id: 9, title: 'Evening Raagas', artist: 'Parveen Sultana', image: 'https://picsum.photos/seed/9/200', songs: [{id: 901, title: 'Raag Yaman', artist: 'Parveen Sultana'}] },
 ];
 
-const initialUploads = [
-    { id: 1663491221, name: 'My Custom Track.mp3' },
-    { id: 1663491222, name: 'Chill Lofi Beat.wav' },
-];
+// --- We no longer need 'initialUploads' as it will come from the API ---
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [nowPlaying, setNowPlaying] = useState(null);
   const [currentPlaylist, setCurrentPlaylist] = useState(null);
-  const [uploadedSongs, setUploadedSongs] = useState(initialUploads);
+  
+  // This state will now be filled by your API
+  const [uploadedSongs, setUploadedSongs] = useState([]);
+  
   const [isShuffled, setIsShuffled] = useState(false);
   const [playQueue, setPlayQueue] = useState([]);
 
+  // Define the base URL of your backend server
+  const backendUrl = 'http://localhost:4000';
+
+  // --- NEW: Function to fetch songs from the database ---
+  const fetchUploadedSongs = async () => {
+    try {
+      const response = await fetch(`${backendUrl}/songs`);
+      const data = await response.json();
+      setUploadedSongs(data);
+    } catch (error) {
+      console.error("Failed to fetch songs:", error);
+    }
+  };
+
+  // --- NEW: Fetch songs when the app first loads ---
+  useEffect(() => {
+    fetchUploadedSongs();
+  }, []); // The empty array [] means this runs only once on mount
+
+  // --- Shuffle logic remains the same ---
   const shuffleArray = (array) => {
     let shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -85,21 +105,61 @@ function App() {
     setIsShuffled(prev => !prev);
   };
 
-  const addSong = (newSongFile) => {
-    const newSong = { id: Date.now(), name: newSongFile.name };
-    setUploadedSongs(prevSongs => [newSong, ...prevSongs]);
-  };
-  const deleteSong = (songId) => {
-    setUploadedSongs(prevSongs => prevSongs.filter(song => song.id !== songId));
+  // --- UPDATED: 'addSong' function now calls the API ---
+  const addSong = async (formData) => {
+    try {
+      const response = await fetch(`${backendUrl}/upload`, {
+        method: 'POST',
+        body: formData, // FormData already contains title, artist, and audio file
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      // After successful upload, refresh the song list from the database
+      fetchUploadedSongs();
+      return data.message; // Return success message to UploadsPage
+    } catch (error) {
+      console.error("Error uploading song:", error);
+      throw error; // Throw error back to UploadsPage to display
+    }
   };
 
+  // --- UPDATED: 'deleteSong' function now calls the API ---
+  const deleteSong = async (songId) => {
+    if (!window.confirm("Are you sure you want to delete this song?")) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${backendUrl}/songs/${songId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Delete failed');
+      }
+
+      // After successful delete, refresh the song list
+      fetchUploadedSongs();
+    } catch (error) {
+      console.error("Error deleting song:", error);
+    }
+  };
+
+  // --- Playlist and Playback logic remains the same ---
   const handlePlaylistClick = (playlist) => {
     setCurrentPlaylist(playlist);
     setCurrentPage('playlist');
   };
 
   const handlePlaySong = (song) => {
-    setNowPlaying({ ...song, image: currentPlaylist.image });
+    // Check if the song is from a playlist (has .image) or an upload (no .image)
+    const image = currentPlaylist?.image || 'https://picsum.photos/seed/default/200'; // Fallback image for uploads
+    setNowPlaying({ ...song, image: image });
   };
 
   const handleNextSong = () => {
@@ -135,8 +195,21 @@ function App() {
         )}
         {currentPage === 'browse' && <BrowsePage />}
         {currentPage === 'library' && <LibraryPage />}
-        {currentPage === 'uploads' && <UploadsPage uploadedSongs={uploadedSongs} onUpload={addSong} onDelete={deleteSong} />}
-        {currentPage === 'editProfile' && <EditProfilePage uploadedSongs={uploadedSongs} onDelete={deleteSong} onNavigate={setCurrentPage} />}
+        
+        {/* These components now use the API-driven functions */}
+        {currentPage === 'uploads' && 
+          <UploadsPage 
+            uploadedSongs={uploadedSongs} 
+            onUpload={addSong} 
+            onDelete={deleteSong} 
+          />}
+        {currentPage === 'editProfile' && 
+          <EditProfilePage 
+            uploadedSongs={uploadedSongs} 
+            onDelete={deleteSong} 
+            onNavigate={setCurrentPage} 
+          />}
+        
         {currentPage === 'settings' && <SettingsPage onNavigate={setCurrentPage} />}
         {currentPage === 'playlist' && <PlaylistPage playlist={currentPlaylist} onPlaySong={handlePlaySong} onBack={handleBackToHome} />}
       </main>
