@@ -21,7 +21,7 @@ const db = mysql.createPool({
   host: 'localhost',
   user: 'root',             // Your MySQL username
   password: '2212@AaryaTilak@1008@MysqlNew',    // <-- IMPORTANT: Change this to your MySQL password
-  database: 'SwarSetu1'    // Your MySQL database name
+  database: 'swarsetu1'    // Your MySQL database name
 }).promise();
 
 
