@@ -15,7 +15,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 // --- Mock Data for Playlists (Can be replaced by API later) ---
 const newReleases = [
   {
-    id: 1, title: 'Ghazal', artist: 'Jagjit Singh', image: 'https://picsum.photos/seed/1/200',
+    id: 1, title: 'Ghazal', artist: 'Jagjit Singh', image: 'assets/Ghazal.jpg',   //add the name of image saved in assets folder
     songs: [
       { id: 101, title: 'Jhuki Jhuki si nazar', artist: 'Jagjit Singh' },
       { id: 102, title: 'Wo kagaz ki kashti', artist: 'Jagjit Singh' },
@@ -23,21 +23,21 @@ const newReleases = [
     ]
   },
   {
-    id: 2, title: 'Morning Raagas', artist: 'Dr. Prabha Atre', image: 'https://picsum.photos/seed/2/200',
+    id: 2, title: 'Morning Raagas', artist: 'Dr. Prabha Atre', image: 'assets/MorningRaagas.jpg',
     songs: [
       { id: 201, title: 'Bhairav', artist: 'Dr. Prabha Atre' },
       { id: 202, title: 'Lalit', artist: 'Dr. Prabha Atre' },
       { id: 203, title: 'Todi', artist: 'Dr. Prabha Atre' },
     ]
   },
-  { id: 3, title: 'Semi-classical music', artist: 'Shreya Ghoshal', image: 'https://picsum.photos/seed/3/200',
+  { id: 3, title: 'Semi-classical music', artist: 'Shreya Ghoshal', image: 'assets/SemiClassical.jpg',
     songs: [
       { id: 301, title: 'Mere dholna', artist: 'Shreya Ghoshal' },
       { id: 302, title: 'Tere bin', artist: 'Shreya Ghoshal' },
       { id: 303, title: 'Bairi Piya', artist: 'Shreya Ghoshal' },
     ]
    },
-  { id: 4, title: 'Thumri', artist: 'Ustad Rashid Khan', image: 'https://picsum.photos/seed/4/200',
+  { id: 4, title: 'Thumri', artist: 'Ustad Rashid Khan', image: 'assets/Thumri.jpg',
     songs: [
       { id: 401, title: '"Aaj Radha Brij Ko Chali"', artist: 'Ustad Rashid Khan' },
       { id: 402, title: 'Babul Mora', artist: 'Ustad Rashid Khan' },
