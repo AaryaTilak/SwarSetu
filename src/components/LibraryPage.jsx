@@ -3,21 +3,21 @@ import MusicCard from './MusicCard'; // We can reuse the MusicCard component
 
 // Sample data for the user's library
 const userPlaylists = [
-  { id: 1, title: 'Thumri Mix', artist: '45 songs', image: 'https://picsum.photos/seed/playlist1/200' },
-  { id: 2, title: 'Semi-classical Beats', artist: '30 songs', image: 'https://picsum.photos/seed/playlist2/200' },
-  { id: 3, title: 'Late Night Ghazals', artist: '88 songs', image: 'https://picsum.photos/seed/playlist3/200' },
-  { id: 4, title: 'Classical Focus', artist: '50 songs', image: 'https://picsum.photos/seed/playlist4/200' },
+  { id: 1, title: 'Thumri Mix', artist: '45 songs', image: 'assets/Thumri.jpg' },
+  { id: 2, title: 'Semi-classical Beats', artist: '30 songs', image: 'assets/SemiClassical.jpg' },
+  { id: 3, title: 'Late Night Ghazals', artist: '88 songs', image: 'assets/Ghazal.jpg' },
+  { id: 4, title: 'Classical Focus', artist: '50 songs', image: 'assets/ClassicalFocus.jpg' },
 ];
 
 const recommendations = [
-    { id: 1, title: 'Discover Weekly', artist: 'Curated for you', image: 'https://picsum.photos/seed/rec1/200' },
-    { id: 2, title: 'Release Radar', artist: 'New tracks', image: 'https://picsum.photos/seed/rec2/200' },
+    { id: 1, title: 'Discover Weekly', artist: 'Curated for you', image: 'assets/DiscoverWeekly.jpg'},
+    { id: 2, title: 'Release Radar', artist: 'New tracks', image: 'assets/NewReleases.jpg'},
 ];
 
 const LibraryPage = () => {
   // Custom style for the special "Liked Songs" card
   const likedSongsCardStyle = {
-    background: 'linear-gradient(135deg, #4e54c8, #8f94fb)',
+    background: 'linear-gradient(135deg, #ef3fa3ff, #e65a37ff, #4f9bfeff)',
     minHeight: '200px',
     cursor: 'pointer',
     transition: 'transform 0.2s ease-in-out',
