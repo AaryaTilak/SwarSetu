@@ -1,4 +1,6 @@
-const Header = ({ onNavigate, activePage }) => {
+import React from 'react';
+
+const Header = ({ onNavigate, activePage, onLogout }) => {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div className="container-fluid">
@@ -51,13 +53,11 @@ const Header = ({ onNavigate, activePage }) => {
                 <i className="bi bi-person-circle fs-4"></i>
               </a>
               <ul className="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                {/* Add onClick handler to navigate to 'editProfile' */}
                 <li>
                    <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); onNavigate('editProfile'); }}>
                      <i className="bi bi-pencil-square me-2"></i>Edit Profile
                    </a>
                  </li>
-                {/* Add onClick handler to navigate to 'settings' */}
                  <li>
                    <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); onNavigate('settings'); }}>
                      <i className="bi bi-gear-fill me-2"></i>Settings
@@ -65,7 +65,13 @@ const Header = ({ onNavigate, activePage }) => {
                  </li>
                 <li><a className="dropdown-item" href="#"><i className="bi bi-shield-lock-fill me-2"></i>Privacy Policy</a></li>
                 <li><hr className="dropdown-divider" /></li>
-                <li><a className="dropdown-item text-danger" href="#"><i className="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                
+                {/* Updated Logout Link */}
+                <li>
+                    <a className="dropdown-item text-danger" href="#" onClick={(e) => { e.preventDefault(); onLogout(); }}>
+                        <i className="bi bi-box-arrow-right me-2"></i>Logout
+                    </a>
+                </li>
               </ul>
             </li>
           </ul>
