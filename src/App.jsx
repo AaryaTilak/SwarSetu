@@ -8,7 +8,7 @@ import UploadsPage from './components/UploadsPage';
 import SettingsPage from './components/SettingsPage';
 import EditProfilePage from './components/EditProfilePage';
 import PlaylistPage from './components/PlaylistPage';
-import AuthPage from './components/AuthPage'; // Import AuthPage
+import AuthPage from './components/AuthPage';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
@@ -16,7 +16,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 // --- Static Data with Local Assets ---
 const newReleases = [
   {
-    id: 1, title: 'Ghazal', artist: 'Jagjit Singh', image: '/assets/Ghazal.jpg', 
+    id: 1, title: 'Ghazal', artist: 'Jagjit Singh', image: '/assets/Ghazal.jpg',
     songs: [
       { id: 101, title: 'Jhuki Jhuki si nazar', artist: 'Jagjit Singh' },
       { id: 102, title: 'Wo kagaz ki kashti', artist: 'Jagjit Singh' },
@@ -69,15 +69,61 @@ function App() {
 
   const backendUrl = 'http://localhost:4000';
 
-  // --- Authentication Functions ---
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    setCurrentPage('home');
+  // --- Authentication Functions (Connected to Database) ---
+
+  const handleLogin = async (email, password) => {
+    try {
+      const response = await fetch(`${backendUrl}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error); // Display error from backend
+        return;
+      }
+
+      // Login Successful
+      setIsAuthenticated(true);
+      setCurrentPage('home');
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Network error. Please ensure backend is running.");
+    }
+  };
+
+  const handleSignup = async (name, email, password) => {
+    try {
+      const response = await fetch(`${backendUrl}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error);
+        return;
+      }
+
+      // Signup Successful - Automatically log user in
+      alert("Account created successfully!");
+      setIsAuthenticated(true);
+      setCurrentPage('home');
+    } catch (error) {
+      console.error("Signup failed:", error);
+      alert("Network error. Please ensure backend is running.");
+    }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setNowPlaying(null); // Stop music on logout
+    setNowPlaying(null);
+    setCurrentPage('home');
   };
 
   // --- API Functions ---
@@ -91,12 +137,15 @@ function App() {
     }
   };
 
+  // Fetch songs only when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchUploadedSongs();
     }
   }, [isAuthenticated]);
 
+
+  // --- File Upload & Delete Functions ---
   const addSong = async (formData) => {
     try {
       const response = await fetch(`${backendUrl}/upload`, {
@@ -160,15 +209,15 @@ function App() {
     setCurrentPage('playlist');
   };
 
-  // --- Playback Logic (Handles both Uploads & Static Playlists) ---
+  // --- Playback Logic ---
   const handlePlaySong = (song) => {
     let imageUrl;
 
-    // 1. Check if it's an uploaded song with a backend image
+    // 1. Uploaded song (from backend)
     if (song.image_filename) {
       imageUrl = `${backendUrl}/uploads/${song.image_filename}`;
     }
-    // 2. Check if it's from a static playlist
+    // 2. Static playlist song
     else if (currentPlaylist && currentPlaylist.image) {
       imageUrl = currentPlaylist.image;
     }
@@ -185,7 +234,7 @@ function App() {
     const currentIndex = playQueue.findIndex(song => song.id === nowPlaying.id);
     const nextIndex = (currentIndex + 1) % playQueue.length;
     const nextSong = playQueue[nextIndex];
-    handlePlaySong(nextSong); // Reuse handlePlaySong to ensure image logic runs
+    handlePlaySong(nextSong); 
   };
 
   const handlePrevSong = () => {
@@ -201,17 +250,18 @@ function App() {
   };
 
   // --- Conditional Rendering ---
-  
+
   // 1. If NOT authenticated, show Login/Signup Page
   if (!isAuthenticated) {
-    return <AuthPage onLogin={handleLogin} />;
+    // Pass both handlers to AuthPage
+    return <AuthPage onLogin={handleLogin} onSignup={handleSignup} />;
   }
 
   // 2. If authenticated, show the Main App
   return (
     <>
       <Header onNavigate={setCurrentPage} activePage={currentPage} onLogout={handleLogout} />
-      
+
       <main className="container mt-4">
         {currentPage === 'home' && (
           <>
@@ -241,12 +291,12 @@ function App() {
         )}
 
         {currentPage === 'settings' && <SettingsPage onNavigate={setCurrentPage} />}
-        
+
         {currentPage === 'playlist' && (
-          <PlaylistPage 
-            playlist={currentPlaylist} 
-            onPlaySong={handlePlaySong} 
-            onBack={handleBackToHome} 
+          <PlaylistPage
+            playlist={currentPlaylist}
+            onPlaySong={handlePlaySong}
+            onBack={handleBackToHome}
           />
         )}
       </main>

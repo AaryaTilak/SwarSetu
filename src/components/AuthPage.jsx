@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-const AuthPage = ({ onLogin }) => {
+// Updated to accept both onLogin and onSignup functions
+const AuthPage = ({ onLogin, onSignup }) => {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -9,7 +10,7 @@ const AuthPage = ({ onLogin }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -24,9 +25,14 @@ const AuthPage = ({ onLogin }) => {
       return;
     }
 
-    // If validation passes, we simulate a login
-    // In a real app, you would send a POST request to your backend here
-    onLogin(); 
+    // Logic to switch between Login and Signup functions
+    if (isLoginMode) {
+      // Call the login function passed from App.jsx
+      await onLogin(formData.email, formData.password);
+    } else {
+      // Call the signup function passed from App.jsx
+      await onSignup(formData.name, formData.email, formData.password);
+    }
   };
 
   return (
