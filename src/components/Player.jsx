@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffle, playQueue }) => {
+// Updated props to accept 'likedSongIds' and 'onToggleLike'
+const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffle, playQueue, likedSongIds, onToggleLike }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -9,10 +10,26 @@ const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffl
 
   const audioRef = useRef(null);
 
+  // Check if the currently playing song is in the liked list
+  const isLiked = nowPlaying && likedSongIds ? likedSongIds.includes(nowPlaying.id) : false;
+
   useEffect(() => {
     if (nowPlaying && audioRef.current) {
-      audioRef.current.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-      audioRef.current.play().catch(error => console.error("Audio Playback Error:", error));
+      // 1. Determine the Audio Source URL
+      let audioSrc;
+      if (nowPlaying.filename) {
+        // It's an uploaded song -> Use Backend URL
+        audioSrc = `http://localhost:4000/uploads/${nowPlaying.filename}`;
+      } else {
+        // It's a static/demo song -> Use Placeholder
+        audioSrc = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+      }
+
+      audioRef.current.src = audioSrc;
+      
+      // 2. Play
+      audioRef.current.play()
+        .catch(error => console.error("Audio Playback Error:", error));
       setIsPlaying(true);
     }
   }, [nowPlaying]);
@@ -68,14 +85,23 @@ const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffl
         />
         <div className="container-fluid">
           <div className="row align-items-center">
+            {/* Song Info Section */}
             <div className="col-md-3 d-flex align-items-center">
               {nowPlaying ? (
                 <>
-                  <img src={nowPlaying.image} alt="Album Art" className="me-3" style={{ width: '64px', height: '64px' }} />
-                  <div>
+                  <img src={nowPlaying.image} alt="Album Art" className="me-3 rounded" style={{ width: '56px', height: '56px', objectFit: 'cover' }} />
+                  <div className="me-3" style={{ minWidth: 0 }}>
                     <h6 className="mb-0 text-truncate">{nowPlaying.title}</h6>
                     <small className="text-muted">{nowPlaying.artist}</small>
                   </div>
+                  {/* NEW: Heart Icon Button */}
+                  <button 
+                    className="btn btn-link p-0" 
+                    onClick={() => onToggleLike(nowPlaying)}
+                    style={{ color: isLiked ? '#D97925' : '#6c757d' }} // Orange if liked, Gray if not
+                  >
+                    <i className={`bi ${isLiked ? 'bi-heart-fill' : 'bi-heart'} fs-5`}></i>
+                  </button>
                 </>
               ) : (
                 <div>
@@ -85,6 +111,7 @@ const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffl
               )}
             </div>
 
+            {/* Controls Section */}
             <div className="col-md-6">
               <div className="d-flex align-items-center justify-content-center mb-2">
                 <button className={`btn btn-link ${isShuffled ? 'text-primary' : 'text-white'}`} onClick={onToggleShuffle} disabled={!nowPlaying}>
@@ -112,6 +139,7 @@ const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffl
               </div>
             </div>
 
+            {/* Volume & Queue Section */}
             <div className="col-md-3 d-flex align-items-center justify-content-end">
               <button className="btn btn-link text-white me-2" onClick={() => setShowQueue(true)} disabled={!nowPlaying}>
                 <i className="bi bi-music-note-list fs-4"></i>
@@ -132,6 +160,7 @@ const Player = ({ nowPlaying, onNextSong, onPrevSong, isShuffled, onToggleShuffl
         </div>
       </footer>
 
+      {/* Queue Modal */}
       {showQueue && (
         <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)' }}>
           <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">

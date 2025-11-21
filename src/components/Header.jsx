@@ -18,11 +18,11 @@ const Header = ({ onNavigate, activePage, onLogout }) => {
                 Home
               </a>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <a className={`nav-link ${activePage === 'browse' ? 'active' : ''}`} href="#" onClick={(e) => { e.preventDefault(); onNavigate('browse'); }}>
                 Browse
               </a>
-            </li>
+            </li> */}
             <li className="nav-item">
               <a className={`nav-link ${activePage === 'library' ? 'active' : ''}`} href="#" onClick={(e) => { e.preventDefault(); onNavigate('library'); }}>
                 Library

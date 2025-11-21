@@ -1,81 +1,60 @@
 import React from 'react';
-import MusicCard from './MusicCard'; // We can reuse the MusicCard component
 
-// Sample data for the user's library
-const userPlaylists = [
-  { id: 1, title: 'Thumri Mix', artist: '45 songs', image: 'assets/Thumri.jpg' },
-  { id: 2, title: 'Semi-classical Beats', artist: '30 songs', image: 'assets/SemiClassical.jpg' },
-  { id: 3, title: 'Late Night Ghazals', artist: '88 songs', image: 'assets/Ghazal.jpg' },
-  { id: 4, title: 'Classical Focus', artist: '50 songs', image: 'assets/ClassicalFocus.jpg' },
-];
+const LibraryPage = ({ likedSongs, onPlaySong }) => {
+  const backendUrl = 'http://localhost:4000';
 
-const recommendations = [
-    { id: 1, title: 'Discover Weekly', artist: 'Curated for you', image: 'assets/DiscoverWeekly.jpg'},
-    { id: 2, title: 'Release Radar', artist: 'New tracks', image: 'assets/NewReleases.jpg'},
-];
-
-const LibraryPage = () => {
-  // Custom style for the special "Liked Songs" card
-  const likedSongsCardStyle = {
-    background: 'linear-gradient(135deg, #ef3fa3ff, #e65a37ff, #4f9bfeff)',
-    minHeight: '200px',
-    cursor: 'pointer',
-    transition: 'transform 0.2s ease-in-out',
-  };
-  
-  const [hover, setHover] = React.useState(false);
-
-  return (
-    <div className="container text-white">
-      <h1 className="mb-5">My Library</h1>
-
-      {/* Main Collections Section */}
-      <div className="row mb-5">
-        <div className="col-12">
-           <div 
-            className="card p-4 h-100 d-flex flex-column justify-content-end" 
-            style={hover ? {...likedSongsCardStyle, transform: 'scale(1.02)'} : likedSongsCardStyle}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-           >
-            <i className="bi bi-heart-fill fs-1 mb-3"></i>
-            <h2 className="card-title">Liked Songs</h2>
-            <p className="card-text">128 songs</p>
-          </div>
+  // 1. Empty State
+  if (!likedSongs || likedSongs.length === 0) {
+    return (
+      <div className="container text-white text-center mt-5">
+        <h1 className="mb-4">My Library</h1>
+        <div className="p-5 border border-secondary rounded bg-dark">
+          <i className="bi bi-heart fs-1 text-muted mb-3"></i>
+          <h4>No Liked Songs Yet</h4>
+          <p className="text-muted">Go explore and tap the heart icon on songs to add them here!</p>
         </div>
       </div>
+    );
+  }
 
-      {/* User Playlists Grid */}
-      <section className="mb-5">
-        <h3>My Playlists</h3>
-        <div className="row g-3 mt-2">
-          {userPlaylists.map(playlist => (
-            <div className="col-6 col-md-4 col-lg-3" key={playlist.id}>
-              <MusicCard
-                image={playlist.image}
-                title={playlist.title}
-                artist={playlist.artist}
+  // 2. List of Liked Songs
+  return (
+    <div className="container text-white">
+      <h1 className="mb-4">Liked Songs</h1>
+      <div className="list-group">
+        {likedSongs.map((song, index) => (
+          <div 
+            key={song.id} 
+            className="list-group-item list-group-item-action bg-dark text-white border-secondary d-flex justify-content-between align-items-center"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onPlaySong(song)}
+          >
+            <div className="d-flex align-items-center">
+              <span className="me-3 text-muted" style={{ width: '20px' }}>{index + 1}</span>
+              
+              {/* Song Image */}
+              <img 
+                src={song.image_filename 
+                    ? `${backendUrl}/uploads/${song.image_filename}` 
+                    : '/assets/Ghazal.jpg'} // Fallback image
+                alt={song.title} 
+                className="me-3 rounded" 
+                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                onError={(e) => e.target.src = 'https://via.placeholder.com/50'}
               />
+              
+              <div>
+                <div className="fw-bold">{song.title}</div>
+                <small className="text-muted">{song.artist}</small>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
-      
-      {/* Recommendations Grid */}
-      <section className="mb-5">
-        <h3>Recommendations</h3>
-        <div className="row g-3 mt-2">
-          {recommendations.map(rec => (
-            <div className="col-6 col-md-4 col-lg-3" key={rec.id}>
-              <MusicCard
-                image={rec.image}
-                title={rec.title}
-                artist={rec.artist}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+            
+            <button className="btn btn-link text-white fs-4">
+              <i className="bi bi-play-fill"></i>
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

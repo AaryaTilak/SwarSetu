@@ -91,28 +91,26 @@ app.post('/login', async (req, res) => {
 
 // --- SONG ENDPOINTS ---
 
-// A. Endpoint to UPLOAD a song (Audio + Optional Image)
-// We use .fields() to accept two types of files
+// A. Endpoint to UPLOAD a song (Audio + Optional Image + Category)
 app.post('/upload', upload.fields([{ name: 'audio', maxCount: 1 }, { name: 'image', maxCount: 1 }]), async (req, res) => {
-  const { title, artist } = req.body;
+  // Get category from body
+  const { title, artist, category } = req.body;
   
-  // Check for audio file (Required)
   if (!req.files || !req.files['audio']) {
     return res.status(400).json({ error: 'No audio file was uploaded.' });
   }
   
   const audioFilename = req.files['audio'][0].filename;
-  // Check for image file (Optional)
   const imageFilename = req.files['image'] ? req.files['image'][0].filename : null;
 
-  if (!title || !artist) {
-    return res.status(400).json({ error: 'Title and Artist are required fields.' });
+  if (!title || !artist || !category) {
+    return res.status(400).json({ error: 'Title, Artist, and Category are required.' });
   }
 
   try {
-    // Insert into database (including image_filename)
-    const query = 'INSERT INTO songs (title, artist, filename, image_filename) VALUES (?, ?, ?, ?)';
-    await db.query(query, [title, artist, audioFilename, imageFilename]);
+    // Insert category into database
+    const query = 'INSERT INTO songs (title, artist, filename, image_filename, category) VALUES (?, ?, ?, ?, ?)';
+    await db.query(query, [title, artist, audioFilename, imageFilename, category]);
     res.status(201).json({ message: `Song '${title}' uploaded successfully!` });
   } catch (err) {
     console.error("Database upload error:", err);
@@ -146,6 +144,52 @@ app.delete('/songs/:id', async (req, res) => {
   } catch (err) {
     console.error("Database delete error:", err);
     res.status(500).json({ error: "Failed to delete song." });
+  }
+});
+
+// --- LIKES ENDPOINTS ---
+
+// 1. Toggle Like (Add or Remove)
+app.post('/likes/toggle', async (req, res) => {
+  const { userId, songId } = req.body;
+
+  if (!userId || !songId) {
+    return res.status(400).json({ error: "User ID and Song ID required" });
+  }
+
+  try {
+    // Check if like exists
+    const [existingLike] = await db.query(
+      'SELECT * FROM user_likes WHERE user_id = ? AND song_id = ?', 
+      [userId, songId]
+    );
+
+    if (existingLike.length > 0) {
+      // If it exists, DELETE it (Unlike)
+      await db.query('DELETE FROM user_likes WHERE user_id = ? AND song_id = ?', [userId, songId]);
+      res.json({ message: "Unliked", liked: false });
+    } else {
+      // If not, INSERT it (Like)
+      await db.query('INSERT INTO user_likes (user_id, song_id) VALUES (?, ?)', [userId, songId]);
+      res.json({ message: "Liked", liked: true });
+    }
+  } catch (err) {
+    console.error("Like Toggle Error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 2. Get Liked Song IDs for a User
+app.get('/likes/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const [rows] = await db.query('SELECT song_id FROM user_likes WHERE user_id = ?', [userId]);
+    // Return just an array of IDs, e.g., [101, 102, 16633...]
+    const songIds = rows.map(row => row.song_id);
+    res.json(songIds);
+  } catch (err) {
+    console.error("Fetch Likes Error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

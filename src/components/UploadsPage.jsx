@@ -1,53 +1,47 @@
 import React, { useState, useRef } from 'react';
 
 const UploadsPage = ({ uploadedSongs, onUpload, onDelete }) => {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [message, setMessage] = useState('');
   
-  // New state for title and artist
+  // Form Inputs
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
+  // Default category
+  const [category, setCategory] = useState('New Releases'); 
 
-  const fileInputRef = useRef(null);
+  const audioInputRef = useRef(null);
+  const imageInputRef = useRef(null);
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file && file.type.startsWith('audio/')) {
-      setSelectedFile(file);
-      setMessage('');
-    } else {
-      setSelectedFile(null);
-      setMessage('Please select a valid audio file (e.g., MP3, WAV).');
-    }
-  };
-  
   const handleUpload = async () => {
-    if (!selectedFile || !title || !artist) {
-      setMessage('Please provide a title, artist, and audio file.');
+    if (!audioFile || !title || !artist || !category) {
+      setMessage('Please fill in all fields and select an audio file.');
       return;
     }
 
-    // Create a FormData object to send all data
     const formData = new FormData();
     formData.append('title', title);
     formData.append('artist', artist);
-    formData.append('audio', selectedFile);
+    formData.append('category', category); // Send Category to Backend
+    formData.append('audio', audioFile);
+    
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
 
     try {
-      // Call the onUpload function (from App.jsx)
       const successMessage = await onUpload(formData);
       setMessage(successMessage);
       
-      // Reset form on success
-      setSelectedFile(null);
-      setTitle('');
-      setArtist('');
-      fileInputRef.current.value = null;
+      // Reset Form
+      setAudioFile(null); setImageFile(null); 
+      setTitle(''); setArtist(''); setCategory('New Releases');
+      if(audioInputRef.current) audioInputRef.current.value = null;
+      if(imageInputRef.current) imageInputRef.current.value = null;
     } catch (error) {
       setMessage(`Upload failed: ${error.message}`);
     }
-
-    // Clear the message after 3 seconds
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -55,87 +49,63 @@ const UploadsPage = ({ uploadedSongs, onUpload, onDelete }) => {
     <div className="container text-white">
       <h1 className="mb-4">Upload Your Music</h1>
       
-      <div className="card bg-dark border-secondary p-4 p-md-5">
+      <div className="card bg-dark border-secondary p-4">
         <div className="card-body">
-            
-            {/* New Form Inputs for Title and Artist */}
+            {/* Title & Artist */}
             <div className="mb-3">
-              <label htmlFor="title" className="form-label">Song Title</label>
-              <input 
-                type="text" 
-                className="form-control bg-dark text-white border-secondary" 
-                id="title" 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)} 
-              />
+                <label className="form-label">Song Title</label>
+                <input type="text" className="form-control bg-dark text-white border-secondary" value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className="mb-3">
-              <label htmlFor="artist" className="form-label">Artist Name</label>
-              <input 
-                type="text" 
-                className="form-control bg-dark text-white border-secondary" 
-                id="artist" 
-                value={artist} 
-                onChange={(e) => setArtist(e.target.value)} 
-              />
+                <label className="form-label">Artist Name</label>
+                <input type="text" className="form-control bg-dark text-white border-secondary" value={artist} onChange={(e) => setArtist(e.target.value)} />
             </div>
             
-            {/* File Input */}
-            <div 
-              className="border border-3 border-dashed border-secondary rounded-3 p-5 text-center"
-              onClick={() => fileInputRef.current.click()}
-              style={{cursor: 'pointer'}}
-            >
-              <input 
-                type="file" 
-                accept="audio/*" 
-                onChange={handleFileChange} 
-                className="d-none"
-                ref={fileInputRef}
-              />
-              <i className="bi bi-cloud-arrow-up-fill text-secondary" style={{fontSize: '4rem'}}></i>
-              <p className="mt-3 mb-0">Drag & drop or <span className="text-primary fw-bold">click to browse</span></p>
+            {/* NEW: Category Dropdown */}
+            <div className="mb-3">
+                <label className="form-label">Category</label>
+                <select 
+                    className="form-select bg-dark text-white border-secondary" 
+                    value={category} 
+                    onChange={(e) => setCategory(e.target.value)}
+                >
+                    <option value="New Releases">New Releases (General)</option>
+                    <option value="Classical">Classical</option>
+                    <option value="Semi-Classical">Semi-Classical</option>
+                </select>
             </div>
-          
-            {selectedFile && (
-              <div className="alert alert-info mt-4">
-                Selected: <strong>{selectedFile.name}</strong>
-              </div>
-            )}
-            
-            {message && (
-              <div className={`alert ${message.includes('failed') ? 'alert-danger' : 'alert-success'} mt-4`}>
-                {message}
-              </div>
-            )}
 
-            <button 
-                className="btn btn-primary btn-lg mt-4 w-100" 
-                onClick={handleUpload}
-                disabled={!selectedFile || !title || !artist}
-            >
-                <i className="bi bi-upload me-2"></i>Upload Song
-            </button>
+            {/* File Inputs */}
+            <div className="mb-3">
+                <label className="form-label">Audio File (Required)</label>
+                <input type="file" accept="audio/*" className="form-control bg-dark text-white border-secondary" onChange={(e) => setAudioFile(e.target.files[0])} ref={audioInputRef} />
+            </div>
+            
+            <div className="mb-4">
+                <label className="form-label">Cover Art (Optional)</label>
+                <input type="file" accept="image/*" className="form-control bg-dark text-white border-secondary" onChange={(e) => setImageFile(e.target.files[0])} ref={imageInputRef} />
+            </div>
+
+            <button className="btn btn-primary w-100" onClick={handleUpload} disabled={!audioFile || !title || !artist}>Upload Song</button>
+            
+            {message && <div className={`alert mt-3 ${message.includes('failed') ? 'alert-danger' : 'alert-success'}`}>{message}</div>}
         </div>
       </div>
       
-      {/* My Uploads List (now shows real data) */}
+      {/* List of Uploads */}
       <div className="mt-5">
         <h3 className="mb-3">My Uploads</h3>
-        {uploadedSongs.length > 0 ? (
-          <ul className="list-group">
+        <ul className="list-group">
             {uploadedSongs.map(song => (
               <li key={song.id} className="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center">
-                <span><i className="bi bi-music-note me-3"></i>{song.title} - {song.artist}</span>
-                <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(song.id)}>
-                  <i className="bi bi-trash"></i>
-                </button>
+                <div className="d-flex align-items-center">
+                    <span className="badge bg-secondary me-3">{song.category || 'Music'}</span>
+                    <span>{song.title} - {song.artist}</span>
+                </div>
+                <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(song.id)}><i className="bi bi-trash"></i></button>
               </li>
             ))}
-          </ul>
-        ) : (
-          <p className="text-muted">You haven't uploaded any songs yet.</p>
-        )}
+        </ul>
       </div>
     </div>
   );
