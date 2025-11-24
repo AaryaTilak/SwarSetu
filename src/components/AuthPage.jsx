@@ -40,7 +40,7 @@ const AuthPage = ({ onLogin, onSignup }) => {
       <div className="card bg-dark text-white border-secondary p-4" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="text-center mb-4">
             <i className="bi bi-music-note-beamed text-primary" style={{ fontSize: '3rem' }}></i>
-            <h2 className="fw-bold mt-2">Rhythm</h2>
+            <h2 className="fw-bold mt-2">SwarSetu</h2>
             <p className="text-muted">Stream Indian Classical & More</p>
         </div>
 

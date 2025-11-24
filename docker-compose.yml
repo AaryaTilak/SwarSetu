@@ -1,0 +1,54 @@
+services:
+  # 1. Database Service
+  db:
+    image: mysql:8.0
+    container_name: swarsetu-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: swarsetu1
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  # 2. Backend Service
+  backend:
+    build: ./server
+    container_name: swarsetu-backend
+    restart: on-failure
+    ports:
+      - "4000:4000"
+    environment:
+      - DB_HOST=db
+      - DB_PASSWORD=root
+    volumes:
+      - ./server/uploads:/app/uploads
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # 3. Frontend Service
+  frontend:
+    build: .
+    container_name: swarsetu-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+# Define persistent storage for Database
+volumes:
+  mysql_data:
+
+# Define network for containers to talk to each other
+networks:
+  app-network:
+    driver: bridge

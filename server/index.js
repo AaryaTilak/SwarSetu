@@ -17,10 +17,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 4. MySQL Database Connection
 const db = mysql.createPool({
-  host: 'localhost',
+  // Docker uses 'db' as the host name. Localhost is for running without Docker.
+  host: process.env.DB_HOST || 'localhost', 
   user: 'root',
-  password: '2212@AaryaTilak@1008@MysqlNew', // Your specific password
-  database: 'swarsetu1'                      // Your specific database
+  // Use the environment variable if available, otherwise your local password
+  password: process.env.DB_PASSWORD || '2212@AaryaTilak@1008@MysqlNew', 
+  database: 'swarsetu1'
 }).promise();
 
 
