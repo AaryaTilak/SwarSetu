@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: aaryatilak/swarsetu-backend:v1 # <--- CHANGE USERNAME
+        image: aaryatilak/swarsetu-backend:v4 # <--- CHANGE USERNAME
         ports:
         - containerPort: 4000
         env:

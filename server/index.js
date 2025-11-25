@@ -4,6 +4,7 @@ const mysql = require('mysql2');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
+console.log("🚀 BACKEND VERSION 3 STARTING...");
 
 // 2. Initialize App
 const app = express();
