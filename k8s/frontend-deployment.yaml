@@ -9,14 +9,17 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
-  type: LoadBalancer # Allows external access (or use NodePort)
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend-deployment
 spec:
-  replicas: 2 # We can have multiple frontends!
+  replicas: 1
+  # --- FIX 1: STRATEGY ---
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: frontend
@@ -25,8 +28,19 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: nexus-cred
       containers:
       - name: frontend
-        image: aaryatilak/swarsetu-frontend:v1 # <--- CHANGE USERNAME
+        image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401202-swarsetu-aaryatilak/swarsetu-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
+        # --- FIX 2: RESOURCES ---
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "300m"
