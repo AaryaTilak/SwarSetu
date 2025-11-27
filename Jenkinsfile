@@ -131,19 +131,46 @@ spec:
                 container('kubectl') {
                     script {
                         sh '''
-                            # 1. Create Namespace if it doesn't exist
+                            # 1. Ensure Namespace exists
                             kubectl get namespace 2401202 || kubectl create namespace 2401202
 
-                            # 2. Apply Database, Backend, and Frontend
+                            # 2. Create Nexus Secret in the new Namespace (CRITICAL)
+                            # This allows K8s to log in to Nexus to pull your images
+                            kubectl delete secret nexus-cred -n 2401202 --ignore-not-found
+                            kubectl create secret docker-registry nexus-cred \
+                                --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                                --docker-username=admin \
+                                --docker-password=Changeme@2025 \
+                                -n 2401202
+
+                            # 3. Patch ServiceAccount to use this secret automatically
+                            # This avoids needing to edit your YAML files manually
+                            kubectl patch serviceaccount default -n 2401202 -p '{"imagePullSecrets": [{"name": "nexus-cred"}]}'
+
+                            # 4. Apply Configurations
                             kubectl apply -f k8s/ -n 2401202
 
-                            # 3. Force restart to pick up new images
+                            # 5. Restart Deployments to pick up new images
                             kubectl rollout restart deployment/backend-deployment -n 2401202
                             kubectl rollout restart deployment/frontend-deployment -n 2401202
                             
-                            # 4. Wait for rollout to verify success
-                            kubectl rollout status deployment/backend-deployment -n 2401202
-                            kubectl rollout status deployment/frontend-deployment -n 2401202
+                            # 6. Wait for Rollout (With Debugging)
+                            # If it fails, we print the pod status/logs to see WHY
+                            echo "Waiting for Backend Deployment..."
+                            if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=60s; then
+                                echo "❌ BACKEND FAILED. Debug Info:"
+                                kubectl get pods -n 2401202
+                                kubectl describe pod -l app=backend -n 2401202
+                                exit 1
+                            fi
+
+                            echo "Waiting for Frontend Deployment..."
+                            if ! kubectl rollout status deployment/frontend-deployment -n 2401202 --timeout=60s; then
+                                echo "❌ FRONTEND FAILED. Debug Info:"
+                                kubectl get pods -n 2401202
+                                kubectl describe pod -l app=frontend -n 2401202
+                                exit 1
+                            fi
                         '''
                     }
                 }
