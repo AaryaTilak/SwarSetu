@@ -7,7 +7,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 500Mi # Reduced size
 ---
 apiVersion: v1
 kind: Service
@@ -20,14 +20,17 @@ spec:
     - protocol: TCP
       port: 4000
       targetPort: 4000
-  type: ClusterIP # Internal access only
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
 spec:
-  replicas: 1 # Keep as 1 to avoid file sync issues without shared storage
+  replicas: 1
+  # --- FIX 1: KILL OLD POD BEFORE STARTING NEW ONE ---
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: backend
@@ -36,16 +39,27 @@ spec:
       labels:
         app: backend
     spec:
+      imagePullSecrets:
+        - name: nexus-cred
       containers:
       - name: backend
-        image: aaryatilak/swarsetu-backend:v4 # <--- CHANGE USERNAME
+        image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401202-swarsetu-aaryatilak/swarsetu-backend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 4000
         env:
         - name: DB_HOST
-          value: "mysql-service" # Must match the Service name defined in mysql-deployment.yaml
+          value: "mysql-service"
         - name: DB_PASSWORD
           value: "root"
+        # --- FIX 2: REDUCE RESOURCE USAGE ---
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
         volumeMounts:
         - name: uploads-storage
           mountPath: /app/uploads
