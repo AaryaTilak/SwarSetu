@@ -130,17 +130,18 @@ spec:
             steps {
                 container('kubectl') {
                     script {
-                        // Assuming your K8s YAML files are in a folder named 'k8s'
-                        // or listing specific files if they are in root
                         sh '''
-                            # Apply Database, Backend, and Frontend
+                            # 1. Create Namespace if it doesn't exist
+                            kubectl get namespace 2401202 || kubectl create namespace 2401202
+
+                            # 2. Apply Database, Backend, and Frontend
                             kubectl apply -f k8s/ -n 2401202
 
-                            # Force restart to pick up new images
+                            # 3. Force restart to pick up new images
                             kubectl rollout restart deployment/backend-deployment -n 2401202
                             kubectl rollout restart deployment/frontend-deployment -n 2401202
                             
-                            # Wait for rollout to verify success
+                            # 4. Wait for rollout to verify success
                             kubectl rollout status deployment/backend-deployment -n 2401202
                             kubectl rollout status deployment/frontend-deployment -n 2401202
                         '''
