@@ -50,7 +50,7 @@ spec:
     environment {
         // Define your Registry URL and Project Name here for easier updates
         NEXUS_URL = 'nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085'
-        PROJECT_NAME = '2401202-Swarsetu-AaryaTilak' // Keep your specific project folder
+        PROJECT_NAME = '2401202-swarsetu-aaryatilak' // Keep your specific project folder
         BACKEND_IMAGE = 'swarsetu-backend'
         FRONTEND_IMAGE = 'swarsetu-frontend'
     }
