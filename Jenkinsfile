@@ -6,8 +6,6 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-  # --- FIX 1: Use a full Node.js image instead of the scanner image ---
-  # This fixes the "Error while running Node.js" and bridge server crashes.
   - name: sonar-scanner
     image: node:20-buster
     command:
@@ -50,7 +48,6 @@ spec:
     env:
     - name: JENKINS_AGENT_WORKDIR
       value: /home/jenkins/agent
-    # Keep high memory for Git Clone
     resources:
       limits:
         memory: "2Gi"
@@ -74,16 +71,31 @@ spec:
     }
     
     environment {
-        NEXUS_URL = 'nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085'
         PROJECT_NAME = '2401202-swarsetu-aaryatilak'
         BACKEND_IMAGE = 'swarsetu-backend'
         FRONTEND_IMAGE = 'swarsetu-frontend'
+        // NEXUS_URL will be set dynamically in the first stage
     }
 
     stages {
-        // 1. Checkout Code (With Shallow Clone)
-        stage('Checkout Code') {
+        // 1. Find Nexus IP & Checkout
+        stage('Initialize & Checkout') {
             steps {
+                container('kubectl') {
+                    script {
+                        // 1. Dynamically find the Nexus IP to bypass DNS issues
+                        echo "🔎 Finding Nexus Service IP..."
+                        env.NEXUS_IP = sh(script: "kubectl get svc --all-namespaces | grep nexus-service-for-docker-hosted-registry | awk '{print \$4}'", returnStdout: true).trim()
+                        
+                        if (env.NEXUS_IP == "") {
+                            error "❌ Could not find Nexus IP. Check if the service exists."
+                        }
+                        
+                        env.NEXUS_URL = "${env.NEXUS_IP}:8085"
+                        echo "✅ Nexus IP Found: ${env.NEXUS_URL}"
+                    }
+                }
+                
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']], 
@@ -97,17 +109,13 @@ spec:
             }
         }
 
-        // 2. Code Quality Check (UPDATED)
+        // 2. Code Quality Check
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
                      withCredentials([string(credentialsId: '2401202-Swarsetu', variable: 'SONAR_TOKEN')]) {
                         sh '''
-                            # 1. Install scanner via npm (since we are in a Node container)
                             npm install -g sonarqube-scanner
-
-                            # 2. Run the scan
-                            # Note the exclusion of '**/uploads/**' to prevent analyzing MP3 files
                             sonar-scanner \
                                 -Dsonar.projectKey=SwarSetu-key \
                                 -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
@@ -122,78 +130,80 @@ spec:
         }
 
         // 3. Login to Nexus
-        stage('Login to Docker Registry') {
+        stage('Login to Docker') {
             steps {
                 container('dind') {
-                    sh "docker login ${NEXUS_URL} -u admin -p Changeme@2025"
+                    // Use the dynamic IP we found
+                    sh "docker login ${env.NEXUS_URL} -u admin -p Changeme@2025"
                 }
             }
         }
 
-        // 4. Push Images to Nexus
-        stage('Tag & Push Images') {
+        // 4. Build & Push Images
+        stage('Build & Push') {
             steps {
                 container('dind') {
-                    sh '''
-                        # --- Handle Backend ---
-                        echo "Building Backend..."
+                    sh """
+                        # Backend
                         docker build -t ${BACKEND_IMAGE}:latest ./server
-                        docker tag ${BACKEND_IMAGE}:latest ${NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
-                        docker push ${NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
+                        docker tag ${BACKEND_IMAGE}:latest ${env.NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
+                        docker push ${env.NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
 
-                        # --- Handle Frontend ---
-                        echo "Building Frontend..."
+                        # Frontend
                         docker build -t ${FRONTEND_IMAGE}:latest .
-                        docker tag ${FRONTEND_IMAGE}:latest ${NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest
-                        docker push ${NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest
-                    '''
+                        docker tag ${FRONTEND_IMAGE}:latest ${env.NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest
+                        docker push ${env.NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest
+                    """
                 }
             }
         }
         
         // 5. Deploy to Kubernetes
-        stage('Deploy SwarSetu App') {
+        stage('Deploy SwarSetu') {
             steps {
                 container('kubectl') {
                     script {
-                        sh 'kubectl get svc --all-namespaces -o wide'
-                        sh '''
+                        sh """
+                            # 1. Setup Namespace
                             kubectl get namespace 2401202 || kubectl create namespace 2401202
 
-                            # Create Secret for Nexus
+                            # 2. Setup Secret (Using Dynamic IP)
                             kubectl delete secret nexus-cred -n 2401202 --ignore-not-found
-                            kubectl create secret docker-registry nexus-cred \
-                                --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                                --docker-username=admin \
-                                --docker-password=Changeme@2025 \
+                            kubectl create secret docker-registry nexus-cred \\
+                                --docker-server=${env.NEXUS_URL} \\
+                                --docker-username=admin \\
+                                --docker-password=Changeme@2025 \\
                                 -n 2401202
 
                             kubectl patch serviceaccount default -n 2401202 -p '{"imagePullSecrets": [{"name": "nexus-cred"}]}'
 
-                            # Apply Configs
+                            # 3. FIX: Replace the broken Domain with the IP in YAML files
+                            # This ensures K8s pulls from the IP, avoiding DNS errors
+                            find k8s -name "*.yaml" -exec sed -i "s|nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085|${env.NEXUS_URL}|g" {} +
+
+                            # 4. Apply Configs
                             kubectl apply -f k8s/ -n 2401202
 
-                            # Restart Deployments
+                            # 5. Restart Deployments
                             kubectl rollout restart deployment/backend-deployment -n 2401202
                             kubectl rollout restart deployment/frontend-deployment -n 2401202
                             
-                            # Wait for Rollout
-                            echo "Waiting for Backend Deployment..."
+                            # 6. Wait for Success
+                            echo "Waiting for Backend..."
                             if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=120s; then
-                                echo "❌ BACKEND FAILED. Debug Info:"
-                                kubectl get pods -n 2401202
+                                echo "❌ BACKEND FAILED. Logs:"
+                                kubectl logs -l app=backend -n 2401202 --tail=20
                                 kubectl describe pod -l app=backend -n 2401202
                                 exit 1
                             fi
 
-                            echo "Waiting for Frontend Deployment..."
+                            echo "Waiting for Frontend..."
                             if ! kubectl rollout status deployment/frontend-deployment -n 2401202 --timeout=60s; then
-                                echo "❌ FRONTEND FAILED. Debug Info:"
-                                kubectl get pods -n 2401202
+                                echo "❌ FRONTEND FAILED."
                                 kubectl describe pod -l app=frontend -n 2401202
                                 exit 1
                             fi
-                        '''
+                        """
                     }
                 }
             }
