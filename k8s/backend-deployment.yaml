@@ -2,17 +2,19 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: uploads-pv-claim
+  namespace: "2401202"
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi # Reduced size
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
+  namespace: "2401202"
 spec:
   selector:
     app: backend
@@ -26,9 +28,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
+  namespace: "2401202"
 spec:
   replicas: 1
-  # --- FIX 1: KILL OLD POD BEFORE STARTING NEW ONE ---
   strategy:
     type: Recreate
   selector:
@@ -43,16 +45,26 @@ spec:
         - name: nexus-secret
       containers:
       - name: backend
+        # Ensure this points to your correct Nexus image path
         image: 120.0.0.1:30085/2401202-swarsetu-aaryatilak/swarsetu-backend:latest
-        imagePullPolicy: Always      
+        imagePullPolicy: Always
         ports:
         - containerPort: 4000
+        
+        # --- UPDATE THESE VARIABLES ---
         env:
         - name: DB_HOST
-          value: "mysql-service"
+          value: "my-mysql.mysql.svc.cluster.local"  # <--- Replace with your Hosted MySQL IP
+          name : DB_PORT
+          value: "3306"
+        - name: DB_USER
+          value: "root"                             # <--- Replace if you created a different user
         - name: DB_PASSWORD
-          value: "root"
-        # --- FIX 2: REDUCE RESOURCE USAGE ---
+          value: "swarsetu@aaryatilak"          # <--- Replace with the Hosted DB Password
+        - name: DB_NAME
+          value: "swarsetu1"
+        # ------------------------------
+
         resources:
           requests:
             memory: "128Mi"
