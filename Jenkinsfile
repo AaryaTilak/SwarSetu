@@ -1,6 +1,7 @@
 pipeline {
     agent {
         kubernetes {
+            // We increase memory requests and limits here
             yaml '''
 apiVersion: v1
 kind: Pod
@@ -11,6 +12,13 @@ spec:
     command:
     - cat
     tty: true
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
   - name: kubectl
     image: bitnami/kubectl:latest
     command:
@@ -36,6 +44,24 @@ spec:
     - name: docker-config
       mountPath: /etc/docker/daemon.json
       subPath: daemon.json
+  - name: jnlp
+    image: jenkins/inbound-agent:3345.v03dee9b_f88fc-1
+    env:
+    - name: JENKINS_AGENT_WORKDIR
+      value: /home/jenkins/agent
+    # --- FIX: INCREASE MEMORY FOR GIT CLONE ---
+    resources:
+      limits:
+        memory: "2Gi"
+        cpu: "1"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+    # ------------------------------------------
+    volumeMounts:
+    - mountPath: /home/jenkins/agent
+      name: workspace-volume
+      readOnly: false
   volumes:
   - name: docker-config
     configMap:
@@ -46,6 +72,7 @@ spec:
 '''
         }
     }
+    
     
     environment {
         // Define your Registry URL and Project Name here for easier updates
