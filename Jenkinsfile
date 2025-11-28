@@ -156,6 +156,7 @@ spec:
             steps {
                 container('kubectl') {
                     script {
+                        sh 'kubectl get svc --all-namespaces -o wide'
                         sh '''
                             kubectl get namespace 2401202 || kubectl create namespace 2401202
 
