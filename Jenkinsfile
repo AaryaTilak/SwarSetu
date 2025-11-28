@@ -84,24 +84,19 @@ spec:
 
     stages {
         // 1. Build the Docker Images
-        stage('Build Docker Images') {
+        stage('Checkout Code') {
             steps {
-                container('dind') {
-                    sh '''
-                        # Wait for Docker daemon
-                        sleep 5
-                        
-                        echo "--- Building Backend Image ---"
-                        # Assuming server code is in ./server folder
-                        docker build -t ${BACKEND_IMAGE}:latest ./server
-
-                        echo "--- Building Frontend Image ---"
-                        # Assuming frontend Dockerfile is in root (based on previous steps)
-                        docker build -t ${FRONTEND_IMAGE}:latest .
-                        
-                        docker image ls
-                    '''
-                }
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']], 
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [
+                        // This line is the magic fix. 'depth: 1' downloads only the latest commit.
+                        [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true, timeout: 120]
+                    ],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [[url: 'https://github.com/AaryaTilak/SwarSetu.git']]
+                ])
             }
         }
 
