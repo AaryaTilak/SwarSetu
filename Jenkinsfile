@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            // We increase memory requests and limits here
+            // We increase memory requests and limits here to prevent git clone crashes
             yaml '''
 apiVersion: v1
 kind: Pod
@@ -49,7 +49,6 @@ spec:
     env:
     - name: JENKINS_AGENT_WORKDIR
       value: /home/jenkins/agent
-    # --- FIX: INCREASE MEMORY FOR GIT CLONE ---
     resources:
       limits:
         memory: "2Gi"
@@ -57,7 +56,6 @@ spec:
       requests:
         memory: "1Gi"
         cpu: "500m"
-    # ------------------------------------------
     volumeMounts:
     - mountPath: /home/jenkins/agent
       name: workspace-volume
@@ -72,7 +70,6 @@ spec:
 '''
         }
     }
-    
     
     environment {
         // Define your Registry URL and Project Name here for easier updates
@@ -147,13 +144,13 @@ spec:
             }
         }
         
-        // 5. Deploy to Kubernetes
+        // 5. Deploy to Kubernetes (UPDATED)
         stage('Deploy SwarSetu App') {
             steps {
                 container('kubectl') {
                     script {
                         sh '''
-                            # 1. Ensure Namespace exists
+                            # 1. Create Namespace if it doesn't exist
                             kubectl get namespace 2401202 || kubectl create namespace 2401202
 
                             # 2. Create Nexus Secret in the new Namespace (CRITICAL)
@@ -179,7 +176,7 @@ spec:
                             # 6. Wait for Rollout (With Debugging)
                             # If it fails, we print the pod status/logs to see WHY
                             echo "Waiting for Backend Deployment..."
-                            if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=60s; then
+                            if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=120s; then
                                 echo "❌ BACKEND FAILED. Debug Info:"
                                 kubectl get pods -n 2401202
                                 kubectl describe pod -l app=backend -n 2401202
