@@ -29,10 +29,10 @@ spec:
         app: frontend
     spec:
       imagePullSecrets:
-        - name: nexus-cred
+        - name: nexus-secret
       containers:
       - name: frontend
-        image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401202-swarsetu-aaryatilak/swarsetu-frontend:latest
+        image: 120.0.0.1:30085/2401202-swarsetu-aaryatilak/swarsetu-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

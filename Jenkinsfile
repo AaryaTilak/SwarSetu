@@ -145,47 +145,8 @@ spec:
                 container('kubectl') {
                     script {
                         sh """
-                            # 1. Namespace & Secrets
-                            kubectl get namespace 2401202 || kubectl create namespace 2401202
-                            
-                            kubectl delete secret nexus-cred -n 2401202 --ignore-not-found
-                            kubectl create secret docker-registry nexus-cred \\
-                                --docker-server=${env.NEXUS_URL} \\
-                                --docker-username=admin \\
-                                --docker-password=Changeme@2025 \\
-                                -n 2401202
-
-                            kubectl patch serviceaccount default -n 2401202 -p '{"imagePullSecrets": [{"name": "nexus-cred"}]}'
-
-                            # 2. Apply Structure (This sets up the pods with the OLD domain name first)
-                            kubectl apply -f k8s/ -n 2401202
-
-                            # 3. THE FIX: Force Update Images to use the IP Address
-                            # This overrides the domain name in the YAML files
-                            echo "👉 Force-setting images to use IP: ${env.NEXUS_URL}"
-                            
-                            kubectl set image deployment/backend-deployment backend=${env.NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest -n 2401202
-                            kubectl set image deployment/frontend-deployment frontend=${env.NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest -n 2401202
-
-                            # 4. Restart to ensure fresh start
-                            kubectl rollout restart deployment/backend-deployment -n 2401202
-                            kubectl rollout restart deployment/frontend-deployment -n 2401202
-                            
-                            # 5. Wait for Success
-                            echo "Waiting for Backend..."
-                            if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=120s; then
-                                echo "❌ BACKEND FAILED. Debug Info:"
-                                kubectl get pods -n 2401202
-                                kubectl describe pod -l app=backend -n 2401202
-                                exit 1
-                            fi
-
-                            echo "Waiting for Frontend..."
-                            if ! kubectl rollout status deployment/frontend-deployment -n 2401202 --timeout=60s; then
-                                echo "❌ FRONTEND FAILED."
-                                kubectl describe pod -l app=frontend -n 2401202
-                                exit 1
-                            fi
+                            kubectl apply -f k8s/backend-deployment.yaml
+                            kubectl apply -f k8s/frontend-deployment.yaml
                         """
                     }
                 }
