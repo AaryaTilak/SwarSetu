@@ -1,24 +1,25 @@
 pipeline {
     agent {
         kubernetes {
-            // We increase memory requests and limits here to prevent git clone crashes
             yaml '''
 apiVersion: v1
 kind: Pod
 spec:
   containers:
+  # --- FIX 1: Use a full Node.js image instead of the scanner image ---
+  # This fixes the "Error while running Node.js" and bridge server crashes.
   - name: sonar-scanner
-    image: sonarsource/sonar-scanner-cli
+    image: node:20-buster
     command:
     - cat
     tty: true
     resources:
       limits:
+        memory: "2Gi"
+        cpu: "1"
+      requests:
         memory: "1Gi"
         cpu: "500m"
-      requests:
-        memory: "512Mi"
-        cpu: "200m"
   - name: kubectl
     image: bitnami/kubectl:latest
     command:
@@ -49,6 +50,7 @@ spec:
     env:
     - name: JENKINS_AGENT_WORKDIR
       value: /home/jenkins/agent
+    # Keep high memory for Git Clone
     resources:
       limits:
         memory: "2Gi"
@@ -72,15 +74,14 @@ spec:
     }
     
     environment {
-        // Define your Registry URL and Project Name here for easier updates
         NEXUS_URL = 'nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085'
-        PROJECT_NAME = '2401202-swarsetu-aaryatilak' // Keep your specific project folder
+        PROJECT_NAME = '2401202-swarsetu-aaryatilak'
         BACKEND_IMAGE = 'swarsetu-backend'
         FRONTEND_IMAGE = 'swarsetu-frontend'
     }
 
     stages {
-        // 1. Build the Docker Images
+        // 1. Checkout Code (With Shallow Clone)
         stage('Checkout Code') {
             steps {
                 checkout([
@@ -88,7 +89,6 @@ spec:
                     branches: [[name: '*/main']], 
                     doGenerateSubmoduleConfigurations: false,
                     extensions: [
-                        // This line is the magic fix. 'depth: 1' downloads only the latest commit.
                         [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true, timeout: 120]
                     ],
                     submoduleCfg: [],
@@ -97,19 +97,23 @@ spec:
             }
         }
 
-        // 2. Code Quality Check
+        // 2. Code Quality Check (UPDATED)
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                     // Ensure you use the correct credentials ID from your Jenkins
                      withCredentials([string(credentialsId: '2401202-Swarsetu', variable: 'SONAR_TOKEN')]) {
                         sh '''
+                            # 1. Install scanner via npm (since we are in a Node container)
+                            npm install -g sonarqube-scanner
+
+                            # 2. Run the scan
+                            # Note the exclusion of '**/uploads/**' to prevent analyzing MP3 files
                             sonar-scanner \
                                 -Dsonar.projectKey=SwarSetu-key \
                                 -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                                 -Dsonar.login=$SONAR_TOKEN \
                                 -Dsonar.sources=. \
-                                -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/** \
+                                -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/server/uploads/**,**/*.mp3,**/*.wav" \
                                 -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
                         '''
                     }
@@ -121,7 +125,6 @@ spec:
         stage('Login to Docker Registry') {
             steps {
                 container('dind') {
-                    // Update username/password if they are different
                     sh "docker login ${NEXUS_URL} -u admin -p Changeme@2025"
                 }
             }
@@ -133,10 +136,14 @@ spec:
                 container('dind') {
                     sh '''
                         # --- Handle Backend ---
+                        echo "Building Backend..."
+                        docker build -t ${BACKEND_IMAGE}:latest ./server
                         docker tag ${BACKEND_IMAGE}:latest ${NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
                         docker push ${NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
 
                         # --- Handle Frontend ---
+                        echo "Building Frontend..."
+                        docker build -t ${FRONTEND_IMAGE}:latest .
                         docker tag ${FRONTEND_IMAGE}:latest ${NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest
                         docker push ${NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest
                     '''
@@ -144,17 +151,15 @@ spec:
             }
         }
         
-        // 5. Deploy to Kubernetes (UPDATED)
+        // 5. Deploy to Kubernetes
         stage('Deploy SwarSetu App') {
             steps {
                 container('kubectl') {
                     script {
                         sh '''
-                            # 1. Create Namespace if it doesn't exist
                             kubectl get namespace 2401202 || kubectl create namespace 2401202
 
-                            # 2. Create Nexus Secret in the new Namespace (CRITICAL)
-                            # This allows K8s to log in to Nexus to pull your images
+                            # Create Secret for Nexus
                             kubectl delete secret nexus-cred -n 2401202 --ignore-not-found
                             kubectl create secret docker-registry nexus-cred \
                                 --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
@@ -162,19 +167,16 @@ spec:
                                 --docker-password=Changeme@2025 \
                                 -n 2401202
 
-                            # 3. Patch ServiceAccount to use this secret automatically
-                            # This avoids needing to edit your YAML files manually
                             kubectl patch serviceaccount default -n 2401202 -p '{"imagePullSecrets": [{"name": "nexus-cred"}]}'
 
-                            # 4. Apply Configurations
+                            # Apply Configs
                             kubectl apply -f k8s/ -n 2401202
 
-                            # 5. Restart Deployments to pick up new images
+                            # Restart Deployments
                             kubectl rollout restart deployment/backend-deployment -n 2401202
                             kubectl rollout restart deployment/frontend-deployment -n 2401202
                             
-                            # 6. Wait for Rollout (With Debugging)
-                            # If it fails, we print the pod status/logs to see WHY
+                            # Wait for Rollout
                             echo "Waiting for Backend Deployment..."
                             if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=120s; then
                                 echo "❌ BACKEND FAILED. Debug Info:"
