@@ -71,45 +71,36 @@ spec:
     }
     
     environment {
+        // KEEPING YOUR PROJECT NAME
         PROJECT_NAME = '2401202-swarsetu-aaryatilak'
         BACKEND_IMAGE = 'swarsetu-backend'
         FRONTEND_IMAGE = 'swarsetu-frontend'
-        // NEXUS_URL will be set dynamically in the first stage
+        // NEXUS_URL is set dynamically below
     }
 
     stages {
-        // 1. Find Nexus IP & Checkout
-        stage('Initialize & Checkout') {
+        stage('Initialize') {
             steps {
                 container('kubectl') {
                     script {
-                        // 1. Dynamically find the Nexus IP to bypass DNS issues
                         echo "🔎 Finding Nexus Service IP..."
+                        // Find the IP and remove extra whitespace
                         env.NEXUS_IP = sh(script: "kubectl get svc --all-namespaces | grep nexus-service-for-docker-hosted-registry | awk '{print \$4}'", returnStdout: true).trim()
-                        
-                        if (env.NEXUS_IP == "") {
-                            error "❌ Could not find Nexus IP. Check if the service exists."
-                        }
-                        
                         env.NEXUS_URL = "${env.NEXUS_IP}:8085"
-                        echo "✅ Nexus IP Found: ${env.NEXUS_URL}"
+                        echo "✅ Target Nexus URL: ${env.NEXUS_URL}"
                     }
                 }
-                
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']], 
                     doGenerateSubmoduleConfigurations: false,
-                    extensions: [
-                        [$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true, timeout: 120]
-                    ],
+                    extensions: [[$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true, timeout: 120]],
                     submoduleCfg: [],
                     userRemoteConfigs: [[url: 'https://github.com/AaryaTilak/SwarSetu.git']]
                 ])
             }
         }
 
-        // 2. Code Quality Check
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
@@ -121,29 +112,20 @@ spec:
                                 -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                                 -Dsonar.login=$SONAR_TOKEN \
                                 -Dsonar.sources=. \
-                                -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/server/uploads/**,**/*.mp3,**/*.wav" \
-                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+                                -Dsonar.exclusions="**/node_modules/**,**/dist/**,**/coverage/**,**/server/uploads/**,**/*.mp3,**/*.wav"
                         '''
                     }
                 }
             }
         }
 
-        // 3. Login to Nexus
-        stage('Login to Docker') {
-            steps {
-                container('dind') {
-                    // Use the dynamic IP we found
-                    sh "docker login ${env.NEXUS_URL} -u admin -p Changeme@2025"
-                }
-            }
-        }
-
-        // 4. Build & Push Images
         stage('Build & Push') {
             steps {
                 container('dind') {
                     sh """
+                        # Login
+                        docker login ${env.NEXUS_URL} -u admin -p Changeme@2025
+                        
                         # Backend
                         docker build -t ${BACKEND_IMAGE}:latest ./server
                         docker tag ${BACKEND_IMAGE}:latest ${env.NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest
@@ -158,16 +140,14 @@ spec:
             }
         }
         
-        // 5. Deploy to Kubernetes
         stage('Deploy SwarSetu') {
             steps {
                 container('kubectl') {
                     script {
                         sh """
-                            # 1. Setup Namespace
+                            # 1. Namespace & Secrets
                             kubectl get namespace 2401202 || kubectl create namespace 2401202
-
-                            # 2. Setup Secret (Using Dynamic IP)
+                            
                             kubectl delete secret nexus-cred -n 2401202 --ignore-not-found
                             kubectl create secret docker-registry nexus-cred \\
                                 --docker-server=${env.NEXUS_URL} \\
@@ -177,22 +157,25 @@ spec:
 
                             kubectl patch serviceaccount default -n 2401202 -p '{"imagePullSecrets": [{"name": "nexus-cred"}]}'
 
-                            # 3. FIX: Replace the broken Domain with the IP in YAML files
-                            # This ensures K8s pulls from the IP, avoiding DNS errors
-                            find k8s -name "*.yaml" -exec sed -i "s|nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085|${env.NEXUS_URL}|g" {} +
-
-                            # 4. Apply Configs
+                            # 2. Apply Structure (This sets up the pods with the OLD domain name first)
                             kubectl apply -f k8s/ -n 2401202
 
-                            # 5. Restart Deployments
+                            # 3. THE FIX: Force Update Images to use the IP Address
+                            # This overrides the domain name in the YAML files
+                            echo "👉 Force-setting images to use IP: ${env.NEXUS_URL}"
+                            
+                            kubectl set image deployment/backend-deployment backend=${env.NEXUS_URL}/${PROJECT_NAME}/${BACKEND_IMAGE}:latest -n 2401202
+                            kubectl set image deployment/frontend-deployment frontend=${env.NEXUS_URL}/${PROJECT_NAME}/${FRONTEND_IMAGE}:latest -n 2401202
+
+                            # 4. Restart to ensure fresh start
                             kubectl rollout restart deployment/backend-deployment -n 2401202
                             kubectl rollout restart deployment/frontend-deployment -n 2401202
                             
-                            # 6. Wait for Success
+                            # 5. Wait for Success
                             echo "Waiting for Backend..."
                             if ! kubectl rollout status deployment/backend-deployment -n 2401202 --timeout=120s; then
-                                echo "❌ BACKEND FAILED. Logs:"
-                                kubectl logs -l app=backend -n 2401202 --tail=20
+                                echo "❌ BACKEND FAILED. Debug Info:"
+                                kubectl get pods -n 2401202
                                 kubectl describe pod -l app=backend -n 2401202
                                 exit 1
                             fi
