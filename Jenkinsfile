@@ -145,8 +145,7 @@ spec:
                 container('kubectl') {
                     script {
                         sh """
-                            kubectl apply -f k8s/backend-deployment.yaml
-                            kubectl apply -f k8s/frontend-deployment.yaml
+                            kubectl apply -f k8s/deployment.yaml
                         """
                     }
                 }
