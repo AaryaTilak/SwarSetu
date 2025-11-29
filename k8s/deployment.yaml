@@ -1,0 +1,216 @@
+# ===========================
+# 1. BACKEND DEPLOYMENT & SERVICE
+# ===========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: "2401202"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      imagePullSecrets:
+        - name: nexus-secret
+      
+      # INIT CONTAINER (Kept from previous working setup)
+      initContainers:
+        - name: init-db
+          image: mysql:8.0
+          command:
+            - "bash"
+            - "-c"
+            - |
+              echo "⏳ Waiting for MySQL connection..."
+              until mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD -e "select 1"; do
+                echo "Database not ready... sleeping 5s"
+                sleep 5
+              done
+              echo "✅ MySQL is up! Running migrations..."
+              mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD <<EOF
+              CREATE DATABASE IF NOT EXISTS swarsetu1;
+              USE swarsetu1;
+              CREATE TABLE IF NOT EXISTS users (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  name VARCHAR(255) NOT NULL,
+                  email VARCHAR(255) NOT NULL UNIQUE,
+                  password VARCHAR(255) NOT NULL,
+                  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS songs (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  title VARCHAR(255) NOT NULL,
+                  artist VARCHAR(255) NOT NULL,
+                  category VARCHAR(50) DEFAULT 'New Release',
+                  filename VARCHAR(255) NOT NULL,
+                  image_filename VARCHAR(255),
+                  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS user_likes (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  user_id INT NOT NULL,
+                  song_id INT NOT NULL,
+                  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  UNIQUE KEY unique_like (user_id, song_id),
+                  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                  FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
+              );
+              EOF
+              echo "🚀 Database initialized successfully!"
+          env:
+            - name: DB_HOST
+              value: "my-mysql.mysql.svc.cluster.local" # Replace if using external DB
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "swarsetu@aaryatilak"
+
+      containers:
+      - name: backend
+        # Updated Image Path
+        image: 127.0.0.1:30085/2401202-swarsetu-aaryatilak/swarsetu-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 4000
+        
+        env:
+        - name: DB_HOST
+          value: "my-mysql.mysql.svc.cluster.local"
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_USER
+          value: "root"
+        - name: DB_PASSWORD
+          value: "swarsetu@aaryatilak"
+        - name: DB_NAME
+          value: "swarsetu1"
+        
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+            
+        volumeMounts:
+        - name: uploads-storage
+          mountPath: /app/uploads
+      
+      volumes:
+      - name: uploads-storage
+        persistentVolumeClaim:
+          claimName: uploads-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: "2401202"
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 4000
+    targetPort: 4000
+  type: ClusterIP # Changed to ClusterIP as it's usually internal API
+
+---
+
+# ===========================
+# 2. FRONTEND DEPLOYMENT & SERVICE
+# ===========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: "2401202"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      imagePullSecrets:
+        - name: nexus-secret
+      containers:
+      - name: frontend
+        # Updated Image Path
+        image: 127.0.0.1:30085/2401202-swarsetu-aaryatilak/swarsetu-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: "2401202"
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80        # External port
+    targetPort: 80  # Container port (Nginx)
+  type: LoadBalancer # Keep as LoadBalancer if you want direct access
+
+---
+
+# ===========================
+# 3. INGRESS
+# ===========================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: swarsetu-ingress
+  namespace: "2401202"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: swarsetu.imcc.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 4000
+
+---
+# ===========================
+# 4. PERSISTENT STORAGE (For Uploads)
+# ===========================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pv-claim
+  namespace: "2401202"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
