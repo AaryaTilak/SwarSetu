@@ -94,7 +94,7 @@ spec:
                     $class: 'GitSCM',
                     branches: [[name: '*/main']], 
                     doGenerateSubmoduleConfigurations: false,
-                    extensions: [[$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true, timeout: 120]],
+                    extensions: [[$class: 'CloneOption', depth: 1, noTags: false, reference: '', shallow: true, timeout: 600]],
                     submoduleCfg: [],
                     userRemoteConfigs: [[url: 'https://github.com/AaryaTilak/SwarSetu.git']]
                 ])
