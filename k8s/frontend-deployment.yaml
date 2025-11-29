@@ -32,7 +32,7 @@ spec:
         - name: nexus-secret
       containers:
       - name: frontend
-        image: 120.0.0.1:30085/2401202-swarsetu-aaryatilak/swarsetu-frontend:latest
+        image: 127.0.0.1:30085/2401202-swarsetu-aaryatilak/swarsetu-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
