@@ -39,6 +39,12 @@ spec:
     env:
     - name: DOCKER_TLS_CERTDIR
       value: ""
+    # Inject the startup command to configure insecure registry dynamically
+    command:
+    - dockerd
+    - --host=unix:///var/run/docker.sock
+    - --host=tcp://0.0.0.0:2375
+    - --insecure-registry=10.0.0.0/8  # Allow all internal IPs (covers 10.x.x.x)
     volumeMounts:
     - name: docker-config
       mountPath: /etc/docker/daemon.json
@@ -72,7 +78,8 @@ spec:
     
     environment {
         // Project Specific Variables
-        PROJECT_NAME = '2401202-swarsetu-aaryatilak'
+        // CHANGED: Use 'docker-hosted' as the repo name based on common Nexus setups
+        PROJECT_NAME = '2401202_swarsetu_aaryatilak' 
         BACKEND_IMAGE = 'swarsetu-backend'
         FRONTEND_IMAGE = 'swarsetu-frontend'
         // NEXUS_URL will be discovered dynamically in the first stage
@@ -113,7 +120,7 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                     withCredentials([string(credentialsId: 'sonar-token-2401202', variable: 'SONAR_TOKEN')]) {
+                     withCredentials([string(credentialsId: '2401202-swarsetu', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             # Install scanner
                             npm install -g sonarqube-scanner
@@ -207,7 +214,8 @@ spec:
 
                             echo "Waiting for Frontend..."
                             if ! kubectl rollout status deployment/frontend-deployment -n 2401202 --timeout=60s; then
-                                echo "❌ FRONTEND FAILED."
+                                echo "❌ FRONTEND FAILED. Debug Info:"
+                                kubectl get pods -n 2401202
                                 kubectl describe pod -l app=frontend -n 2401202
                                 exit 1
                             fi
