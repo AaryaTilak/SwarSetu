@@ -45,10 +45,7 @@ spec:
     - --host=unix:///var/run/docker.sock
     - --host=tcp://0.0.0.0:2375
     - --insecure-registry=10.0.0.0/8  # Allow all internal IPs (covers 10.x.x.x)
-    volumeMounts:
-    - name: docker-config
-      mountPath: /etc/docker/daemon.json
-      subPath: daemon.json
+    # REMOVED conflicting volumeMount for daemon.json
   - name: jnlp
     image: jenkins/inbound-agent:3345.v03dee9b_f88fc-1
     env:
@@ -66,9 +63,7 @@ spec:
       name: workspace-volume
       readOnly: false
   volumes:
-  - name: docker-config
-    configMap:
-      name: docker-daemon-config
+  # REMOVED conflicting docker-config volume
   - name: kubeconfig-secret
     secret:
       secretName: kubeconfig-secret
@@ -79,7 +74,7 @@ spec:
     environment {
         // Project Specific Variables
         // CHANGED: Use 'docker-hosted' as the repo name based on common Nexus setups
-        PROJECT_NAME = '2401202_swarsetu_aaryatilak' 
+        PROJECT_NAME = '2401202-swarsetu-aarya' 
         BACKEND_IMAGE = 'swarsetu-backend'
         FRONTEND_IMAGE = 'swarsetu-frontend'
         // NEXUS_URL will be discovered dynamically in the first stage
