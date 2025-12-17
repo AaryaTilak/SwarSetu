@@ -104,7 +104,7 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                     withCredentials([string(credentialsId: '2401202_Swarsetu', variable: 'SONAR_TOKEN')]) {
+                     withCredentials([string(credentialsId: '2401202-Swarsetu', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             npm install -g sonarqube-scanner
                             sonar-scanner \
