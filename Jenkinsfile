@@ -104,11 +104,11 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                     withCredentials([string(credentialsId: '2401202-Swarsetu', variable: 'SONAR_TOKEN')]) {
+                     withCredentials([string(credentialsId: '2401202-swarsetu', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             npm install -g sonarqube-scanner
                             sonar-scanner \
-                                -Dsonar.projectKey=SwarSetu-key \
+                                -Dsonar.projectKey=2401202-swarsetu \
                                 -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                                 -Dsonar.login=$SONAR_TOKEN \
                                 -Dsonar.sources=. \
