@@ -115,14 +115,14 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                     withCredentials([string(credentialsId: '2401202-swarsetu', variable: 'SONAR_TOKEN')]) {
+                     withCredentials([string(credentialsId: 'sonar-token-aarya', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             # Install scanner
                             npm install -g sonarqube-scanner
 
                             # Run scan (Excluding node_modules and large audio files)
                             sonar-scanner \
-                                -Dsonar.projectKey=2401202-swarsetu \
+                                -Dsonar.projectKey=2401202_FINAL \
                                 -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                                 -Dsonar.login=$SONAR_TOKEN \
                                 -Dsonar.sources=. \
